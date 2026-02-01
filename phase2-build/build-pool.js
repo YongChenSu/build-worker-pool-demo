@@ -25,11 +25,15 @@ class BuildWorkerPool {
     };
 
     worker.process.on("message", ({ file, output, duration }) => {
-      console.log(`  ✅ [Worker ${id}] ${file} → ${output} (${duration}ms)`);
+      // console.log(`  ✅ [Worker ${id}] ${file} → ${output} (${duration}ms)`);
 
       this.results.push({ file, output, duration });
       worker.busy = false;
       this.processNext();
+
+      if (this.queue.length === 0 && this.workers.every((w) => !w.busy)) {
+        if (this._resolve) this._resolve();
+      }
     });
 
     worker.process.on("error", (err) => {
@@ -55,10 +59,13 @@ class BuildWorkerPool {
 
     // 加入佇列
     files.forEach((file) => {
-      this.queue.push({
-        inputFile: file,
-        outputFile: path.join(distDir, path.basename(file)),
-      });
+      const relativePath = path.relative(srcDir, file);
+      const outputFile = path.join(distDir, relativePath);
+      const outputDir = path.dirname(outputFile);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+      this.queue.push({ inputFile: file, outputFile });
     });
 
     // 開始處理
@@ -72,16 +79,24 @@ class BuildWorkerPool {
   }
 
   getSourceFiles(dir) {
-    const files = fs.readdirSync(dir);
-    return files
-      .filter((f) => f.endsWith(".js") || f.endsWith(".jsx"))
-      .map((f) => path.join(dir, f));
+    let results = [];
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results = results.concat(this.getSourceFiles(fullPath));
+      } else if (entry.name.endsWith(".js") || entry.name.endsWith(".jsx")) {
+        results.push(fullPath);
+      }
+    }
+    return results;
   }
 
   processNext() {
-    const freeWorker = this.workers.find((w) => !w.busy);
+    while (this.queue.length > 0) {
+      const freeWorker = this.workers.find((w) => !w.busy);
+      if (!freeWorker) break;
 
-    if (freeWorker && this.queue.length > 0) {
       const task = this.queue.shift();
       freeWorker.busy = true;
       freeWorker.process.send(task);
@@ -89,14 +104,9 @@ class BuildWorkerPool {
   }
 
   async waitForCompletion() {
+    if (this.queue.length === 0 && this.workers.every((w) => !w.busy)) return;
     return new Promise((resolve) => {
-      const check = setInterval(() => {
-        const allFree = this.workers.every((w) => !w.busy);
-        if (allFree && this.queue.length === 0) {
-          clearInterval(check);
-          resolve();
-        }
-      }, 100);
+      this._resolve = resolve;
     });
   }
 

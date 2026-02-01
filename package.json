@@ -7,6 +7,7 @@
     "phase1": "node phase1-basic/test-basic.js",
     "phase2": "node phase2-build/build-pool.js",
     "phase2:benchmark": "node phase2-build/benchmark.js",
+    "phase3:sequential": "node phase3-comparison/sequential-babel.js",
     "phase3:webpack": "webpack --config phase3-comparison/webpack-config/webpack.config.js",
     "phase3:webpack-workers": "webpack --config phase3-comparison/webpack-config/with-workers.js",
     "phase3:vite": "vite build --config phase3-comparison/vite-config/vite.config.js",
@@ -23,7 +24,8 @@
   "dependencies": {
     "@babel/core": "^7.23.0",
     "@babel/preset-env": "^7.23.0",
-    "@babel/preset-react": "^7.23.0"
+    "@babel/preset-react": "^7.23.0",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "webpack": "^5.89.0",
