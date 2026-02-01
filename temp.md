@@ -170,4 +170,4 @@ $ node phase2-build/benchmark.js
 ✅ 多線程 (7W) 表現最佳
 對於這個檔案數量,使用 workers 是值得的
 
-![alt text](image.png)
+![phase2-benchmark](phase2-benchmark.png)
