@@ -54,7 +54,8 @@ async function singleThreadBuild() {
     const relativePath = path.relative(srcDir, file);
     const outputFile = path.join(outDir, relativePath);
     const outputFileDir = path.dirname(outputFile);
-    if (!fs.existsSync(outputFileDir)) fs.mkdirSync(outputFileDir, { recursive: true });
+    if (!fs.existsSync(outputFileDir))
+      fs.mkdirSync(outputFileDir, { recursive: true });
     fs.writeFileSync(outputFile, result.code);
   }
 
@@ -82,7 +83,8 @@ async function multiThreadBuild(numWorkers = 4) {
     const relativePath = path.relative(srcDir, file);
     const outputFile = path.join(outDir, relativePath);
     const outputFileDir = path.dirname(outputFile);
-    if (!fs.existsSync(outputFileDir)) fs.mkdirSync(outputFileDir, { recursive: true });
+    if (!fs.existsSync(outputFileDir))
+      fs.mkdirSync(outputFileDir, { recursive: true });
     return { inputFile: file, outputFile };
   });
 
@@ -140,27 +142,7 @@ async function multiThreadBuild(numWorkers = 4) {
 }
 
 // ========================================
-// 方案 3: 使用我們的 BuildWorkerPool
-// ========================================
-async function poolBuild() {
-  console.log("3️⃣  BuildWorkerPool (自動偵測核心數)\n");
-
-  const BuildWorkerPool = require("./build-pool");
-  const pool = new BuildWorkerPool();
-  const numWorkers = pool.workers.length;
-
-  const startTime = Date.now();
-  await pool.build(srcDir, path.join(distDir, "pool"));
-  const duration = Date.now() - startTime;
-
-  pool.shutdown();
-
-  const files = getSourceFiles();
-  return { method: `BuildWorkerPool (${numWorkers}W)`, files: files.length, duration };
-}
-
-// ========================================
-// 方案 4: 多線程 + 自動偵測核心數
+// 方案 3: 多線程 + 自動偵測核心數
 // ========================================
 async function autoMultiThreadBuild() {
   const numWorkers = os.cpus().length - 1;
@@ -175,6 +157,25 @@ async function runBenchmark() {
   console.log("🏁 Build Performance Benchmark");
   console.log("=".repeat(70));
   console.log();
+
+  const { execSync } = require("child_process");
+  const totalCpus = os.cpus().length;
+  let pCores, eCores;
+  try {
+    pCores = parseInt(
+      execSync("sysctl -n hw.perflevel0.logicalcpu").toString().trim(),
+    );
+    eCores = parseInt(
+      execSync("sysctl -n hw.perflevel1.logicalcpu").toString().trim(),
+    );
+  } catch {
+    pCores = totalCpus;
+    eCores = 0;
+  }
+
+  console.log(
+    `💻 CPU: ${totalCpus} 核心 (${pCores} P-core + ${eCores} E-core)`,
+  );
 
   const files = getSourceFiles();
   console.log(`📦 測試檔案數量: ${files.length}\n`);
@@ -208,12 +209,6 @@ async function runBenchmark() {
     console.error("自動核心數測試失敗:", e.message);
   }
 
-  try {
-    results.push(await poolBuild());
-  } catch (e) {
-    console.error("BuildWorkerPool 測試失敗:", e.message);
-  }
-
   // 輸出結果
   printResults(results);
 }
@@ -239,7 +234,7 @@ function printResults(results) {
   results.forEach((r) => {
     const speedup = (r.duration / fastest.duration).toFixed(2);
     const rating =
-      speedup < 1.2 ? "🏆" : speedup < 1.5 ? "⭐" : speedup < 2 ? "👍" : "📊";
+      speedup < 1.2 ? "🏆" : speedup < 1.5 ? "⭐" : speedup < 2 ? "👍" : "👎";
     const isFastest = r.duration === fastest.duration ? " ← 最快!" : "";
 
     console.log(
