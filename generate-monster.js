@@ -11,7 +11,7 @@ if (!fs.existsSync(COMPONENTS_DIR)) {
 }
 
 // 產生 X 個檔案
-const FILE_COUNT = 1000;
+const FILE_COUNT = 2000;
 
 console.log(`🔥 開始生成 ${FILE_COUNT} 個元件檔案...`);
 
