@@ -58,7 +58,7 @@ const appContent = `
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 
-// 匯入所有 1000 個元件
+// 匯入所有 X 個元件
 ${importsList.join("\n")}
 
 const App = () => {

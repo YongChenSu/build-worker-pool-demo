@@ -33,7 +33,7 @@
 │   ├── compile-worker.js  # 編譯 Worker（Babel 轉譯）
 │   ├── build-pool.js      # BuildWorkerPool（進化版）
 │   ├── benchmark.js       # 效能比較（單線程 vs 多線程）
-│   └── src/               # 測試源碼（~1000 個 JSX 檔案）
+│   └── src/               # 測試源碼（~2000 個 JSX 檔案）
 │
 ├── phase3-comparison/     # Phase 3：與 Webpack 比較
 │   ├── sequential-babel.js
